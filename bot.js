@@ -1,5 +1,6 @@
 const TelegramBot = require('node-telegram-bot-api');
 const ytdl = require('ytdl-core');
+const ffmpeg = require('fluent-ffmpeg');
 const fs = require('fs');
 
 // Replace 'YOUR_TELEGRAM_BOT_TOKEN' with your actual bot token
@@ -33,7 +34,33 @@ bot.on('message', async (msg) => {
     } else {
       bot.sendMessage(chatId, 'Invalid YouTube URL. Please try again.');
     }
+  } else if (text.startsWith('/audio')) {
+    const url = text.split(' ')[1];
+    if (ytdl.validateURL(url)) {
+      const format = text.split(' ')[2] || 'mp3';  // Default to mp3 if no format provided
+      bot.sendMessage(chatId, `Downloading audio in ${format} format, please wait...`);
+      const audioStream = ytdl(url, { filter: 'audioonly' });
+      const fileName = `./${ytdl.getURLVideoID(url)}.${format}`;
+
+      ffmpeg(audioStream)
+        .audioBitrate(128)
+        .save(fileName)
+        .on('progress', (progress) => {
+          bot.sendMessage(chatId, `Progress: ${progress.percent.toFixed(2)}%`);
+        })
+        .on('end', () => {
+          bot.sendMessage(chatId, 'Audio download complete. Uploading...');
+          bot.sendDocument(chatId, fileName)
+            .then(() => fs.unlinkSync(fileName))
+            .catch(err => {
+              console.error(err);
+              bot.sendMessage(chatId, 'Failed to upload the audio. Please try again.');
+            });
+        });
+    } else {
+      bot.sendMessage(chatId, 'Invalid YouTube URL. Please try again.');
+    }
   } else {
-    bot.sendMessage(chatId, 'Please use the command /download <YouTube URL>');
+    bot.sendMessage(chatId, 'Use /download <YouTube URL> to get video or /audio <YouTube URL> <format> for audio.');
   }
 });
