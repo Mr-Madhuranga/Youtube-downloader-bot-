@@ -20,7 +20,7 @@ npm install node-telegram-bot-api ytdl-core
 🤚 𝗜𝗡𝗦𝗧𝗥𝗨𝗖𝗧𝗜𝗢𝗡𝗦 
 Use this command to download youtube video
 
-/download <YouTube URL>
+/download "YouTube URL"
 
 Done 🥳
 
